@@ -334,6 +334,12 @@ export const useGridCellEditing = (
     async (params) => {
       const { id, field, deleteValue, initialValue } = params;
 
+      // Check if the cell is editable
+      const cellParams = apiRef.current.getCellParams(id, field);
+      if (!apiRef.current.isCellEditable(cellParams)) {
+        return;
+      }
+
       const value = apiRef.current.getCellValue(id, field);
       let newValue = value;
       if (deleteValue) {

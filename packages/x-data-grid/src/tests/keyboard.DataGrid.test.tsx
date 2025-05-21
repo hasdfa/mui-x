@@ -38,6 +38,59 @@ const expectAriaCoordinate = (
 describe('<DataGrid /> - Keyboard', () => {
   const { render } = createRenderer();
 
+  it('should not call preProcessEditCellProps if isCellEditable returns false when starting edit by typing', async () => {
+    const preProcessEditCellPropsSpy = spy((params) => params.props);
+    let isEditable = false;
+
+    const columns: GridColDef[] = [
+      { field: 'id' },
+      {
+        field: 'brand',
+        editable: true,
+        preProcessEditCellProps: preProcessEditCellPropsSpy,
+      },
+    ];
+
+    const rows = [{ id: 0, brand: 'Nike' }];
+
+    const { user, rerender } = render(
+      <div style={{ width: 300, height: 300 }}>
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          isCellEditable={() => isEditable}
+        />
+      </div>,
+    );
+
+    const cellToEdit = getCell(0, 1); // Target 'brand' cell of the first row
+    await user.click(cellToEdit); // Focus the cell
+    await user.keyboard('a'); // Start editing by typing
+
+    expect(preProcessEditCellPropsSpy.callCount).to.equal(0);
+
+    // Now test with isCellEditable returning true
+    isEditable = true;
+    preProcessEditCellPropsSpy.resetHistory(); // Reset the spy
+
+    rerender(
+      <div style={{ width: 300, height: 300 }}>
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          isCellEditable={() => isEditable}
+        />
+      </div>,
+    );
+
+    // Re-focus the cell.
+    // It's important because the cell might have been reset or re-rendered due to the prop change.
+    await user.click(cellToEdit);
+    await user.keyboard('a'); // Start editing by typing
+
+    expect(preProcessEditCellPropsSpy.callCount).to.equal(1);
+  });
+
   function NavigationTestCaseNoScrollX(
     props: Omit<
       DataGridProps,
