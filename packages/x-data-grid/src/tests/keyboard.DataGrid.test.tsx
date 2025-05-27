@@ -53,23 +53,42 @@ describe('<DataGrid /> - Keyboard', () => {
 
     const rows = [{ id: 0, brand: 'Nike' }];
 
-    const { user, rerender } = render(
+    const { rerender } = render(
       <div style={{ width: 300, height: 300 }}>
         <DataGrid
           rows={rows}
           columns={columns}
-          isCellEditable={() => isEditable}
+          isCellEditable={(params) => {
+            // Ensure 'brand' column for row 0 is handled by our isEditable flag
+            if (params.id === 0 && params.field === 'brand') {
+              return isEditable;
+            }
+            return true; // Default to true for other cells if any
+          }}
+          editMode="cell" // Explicitly set editMode if it helps clarify intent
         />
       </div>,
     );
 
     const cellToEdit = getCell(0, 1); // Target 'brand' cell of the first row
-    await user.click(cellToEdit); // Focus the cell
-    await user.keyboard('a'); // Start editing by typing
 
-    expect(preProcessEditCellPropsSpy.callCount).to.equal(0);
+    // Part 1: isCellEditable returns false
+    // Focus the cell directly.
+    // act is used to ensure that any state updates from focusing are processed.
+    await act(async () => {
+      cellToEdit.focus();
+    });
+    // Simulate a printable key press to initiate editing
+    // Using fireEvent.keyDown directly on the focused cell.
+    fireEvent.keyDown(cellToEdit, { key: 'a' });
 
-    // Now test with isCellEditable returning true
+    // Allow time for any asynchronous operations triggered by keyDown
+    await act(async () => {});
+
+
+    expect(preProcessEditCellPropsSpy.callCount).to.equal(0, 'preProcessEditCellPropsSpy should not be called when isCellEditable is false');
+
+    // Part 2: isCellEditable returns true
     isEditable = true;
     preProcessEditCellPropsSpy.resetHistory(); // Reset the spy
 
@@ -78,17 +97,29 @@ describe('<DataGrid /> - Keyboard', () => {
         <DataGrid
           rows={rows}
           columns={columns}
-          isCellEditable={() => isEditable}
+          isCellEditable={(params) => {
+            if (params.id === 0 && params.field === 'brand') {
+              return isEditable;
+            }
+            return true;
+          }}
+          editMode="cell"
         />
       </div>,
     );
 
-    // Re-focus the cell.
-    // It's important because the cell might have been reset or re-rendered due to the prop change.
-    await user.click(cellToEdit);
-    await user.keyboard('a'); // Start editing by typing
+    // Re-focus the cell and simulate typing again
+    // Ensure the cell is in a clean state before this interaction
+    const cellToEditAfterRerender = getCell(0, 1);
+    await act(async () => {
+      cellToEditAfterRerender.focus();
+    });
+    fireEvent.keyDown(cellToEditAfterRerender, { key: 'a' });
 
-    expect(preProcessEditCellPropsSpy.callCount).to.equal(1);
+    // Allow time for any asynchronous operations
+    await act(async () => {});
+
+    expect(preProcessEditCellPropsSpy.callCount).to.equal(1, 'preProcessEditCellPropsSpy should be called once when isCellEditable is true');
   });
 
   function NavigationTestCaseNoScrollX(
