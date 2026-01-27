@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { RefObject } from '@mui/x-internals/types';
-import { createRenderer, act, waitFor } from '@mui/internal-test-utils';
+import { createRenderer, act, waitFor, screen } from '@mui/internal-test-utils';
 import { getCell } from 'test/utils/helperFn';
 import {
   DataGridPremium,
@@ -914,24 +914,24 @@ describe('<DataGridPremium /> - Excel Formula', () => {
 
   describe('formula bar', () => {
     it('should render formula bar when feature is enabled', () => {
-      const { container } = render(
+      render(
         <div style={{ width: 500, height: 300 }}>
           <DataGridPremium {...baselineProps} experimentalFeatures={{ excelFormula: true }} />
         </div>,
       );
 
-      const formulaBar = container.querySelector('input[placeholder="Select a cell..."]');
+      const formulaBar = screen.getByPlaceholderText('Select a cell...');
       expect(formulaBar).to.not.equal(null);
     });
 
     it('should not render formula bar when feature is disabled', () => {
-      const { container } = render(
+      render(
         <div style={{ width: 500, height: 300 }}>
           <DataGridPremium {...baselineProps} />
         </div>,
       );
 
-      const formulaBar = container.querySelector('input[placeholder="Select a cell..."]');
+      const formulaBar = screen.queryByPlaceholderText('Select a cell...');
       expect(formulaBar).to.equal(null);
     });
 
@@ -951,11 +951,9 @@ describe('<DataGridPremium /> - Excel Formula', () => {
         );
       }
 
-      const { container } = render(<TestComponent />);
+      render(<TestComponent />);
 
-      const formulaInput = container.querySelector(
-        'input[placeholder="Select a cell..."]',
-      ) as HTMLInputElement;
+      const formulaInput = screen.getByPlaceholderText('Select a cell...') as HTMLInputElement;
       expect(formulaInput).to.not.equal(null);
 
       // Focus cell via API (price column, row 0 = value 100)
@@ -987,11 +985,9 @@ describe('<DataGridPremium /> - Excel Formula', () => {
         );
       }
 
-      const { container } = render(<TestComponent />);
+      render(<TestComponent />);
 
-      const formulaInput = container.querySelector(
-        'input[placeholder="Select a cell..."]',
-      ) as HTMLInputElement;
+      const formulaInput = screen.getByPlaceholderText('Select a cell...') as HTMLInputElement;
 
       // Focus the formula cell via API
       await act(async () => {
@@ -1027,11 +1023,9 @@ describe('<DataGridPremium /> - Excel Formula', () => {
         );
       }
 
-      const { container } = render(<TestComponent />);
+      render(<TestComponent />);
 
-      const formulaInput = container.querySelector(
-        'input[placeholder="Select a cell..."]',
-      ) as HTMLInputElement;
+      const formulaInput = screen.getByPlaceholderText('Select a cell...') as HTMLInputElement;
 
       // Focus the column formula cell via API
       await act(async () => {
@@ -1096,11 +1090,9 @@ describe('<DataGridPremium /> - Excel Formula', () => {
         );
       }
 
-      const { container } = render(<TestComponent />);
+      render(<TestComponent />);
 
-      const formulaInput = container.querySelector(
-        'input[placeholder="Select a cell..."]',
-      ) as HTMLInputElement;
+      const formulaInput = screen.getByPlaceholderText('Select a cell...') as HTMLInputElement;
 
       // Focus a cell via API
       await act(async () => {
@@ -1129,11 +1121,9 @@ describe('<DataGridPremium /> - Excel Formula', () => {
         );
       }
 
-      const { container } = render(<TestComponent />);
+      render(<TestComponent />);
 
-      const formulaInput = container.querySelector(
-        'input[placeholder="Select a cell..."]',
-      ) as HTMLInputElement;
+      const formulaInput = screen.getByPlaceholderText('Select a cell...') as HTMLInputElement;
 
       // Focus a cell via API
       await act(async () => {
@@ -1145,7 +1135,7 @@ describe('<DataGridPremium /> - Excel Formula', () => {
       });
 
       // Click the outside button (simulates clicking outside grid)
-      const outsideButton = container.querySelector('button') as HTMLElement;
+      const outsideButton = screen.getByRole('button', { name: 'Outside button' });
       await act(async () => {
         outsideButton.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
         outsideButton.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));

@@ -92,7 +92,12 @@ export function GridFormulaBar() {
       const column = apiRef.current.getColumn(focusedField);
       let parsedValue: unknown = inputValue;
       if (column?.valueParser) {
-        parsedValue = column.valueParser(inputValue, apiRef.current.getRow(focusedRowId), column, apiRef);
+        parsedValue = column.valueParser(
+          inputValue,
+          apiRef.current.getRow(focusedRowId),
+          column,
+          apiRef,
+        );
       }
       const row = apiRef.current.getRow(focusedRowId);
       if (row) {
@@ -134,7 +139,7 @@ export function GridFormulaBar() {
       <FormulaInput
         ref={inputRef}
         value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
+        onChange={(event) => setInputValue(event.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Select a cell..."
         disabled={!focusedCell}
