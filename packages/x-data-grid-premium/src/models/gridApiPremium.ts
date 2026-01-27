@@ -30,6 +30,10 @@ import {
   GridChartsIntegrationPrivateApi,
 } from '../hooks/features/chartsIntegration/gridChartsIntegrationInterfaces';
 import type { GridHistoryApi } from '../hooks/features/history/gridHistoryInterfaces';
+import type {
+  GridExcelFormulaApi,
+  GridExcelFormulaPrivateApi,
+} from '../hooks/features/excelFormula/gridExcelFormulaInterfaces';
 
 /**
  * The api of Data Grid Premium.
@@ -52,6 +56,7 @@ export interface GridApiPremium
     GridSidebarApi,
     GridChartsIntegrationApi,
     GridHistoryApi,
+    GridExcelFormulaApi,
     // APIs that are private in Community plan, but public in Pro and Premium plans
     GridRowMultiSelectionApi,
     GridColumnReorderApi {}
@@ -65,4 +70,5 @@ export interface GridPrivateApiPremium
     GridDetailPanelPrivateApi,
     GridRowReorderPrivateApi,
     GridPivotingPrivateApi,
-    GridChartsIntegrationPrivateApi {}
+    GridChartsIntegrationPrivateApi,
+    GridExcelFormulaPrivateApi {}

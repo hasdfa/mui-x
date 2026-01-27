@@ -7,3 +7,4 @@ export * from './aiAssistant';
 export * from './sidebar';
 export * from './pivoting';
 export * from './history';
+export * from './excelFormula';

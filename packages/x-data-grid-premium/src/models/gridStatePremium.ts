@@ -26,6 +26,10 @@ import type {
   GridChartsIntegrationInitialState,
 } from '../hooks/features/chartsIntegration/gridChartsIntegrationInterfaces';
 import type { GridHistoryState } from '../hooks/features/history/gridHistoryInterfaces';
+import type {
+  GridExcelFormulaState,
+  GridExcelFormulaInitialState,
+} from '../hooks/features/excelFormula/gridExcelFormulaInterfaces';
 
 /**
  * The state of Data Grid Premium.
@@ -39,6 +43,7 @@ export interface GridStatePremium extends GridStatePro {
   sidebar: GridSidebarState;
   chartsIntegration: GridChartsIntegrationState;
   history: GridHistoryState;
+  excelFormula?: GridExcelFormulaState;
 }
 
 /**
@@ -52,4 +57,5 @@ export interface GridInitialStatePremium extends GridInitialStatePro {
   aiAssistant?: GridAiAssistantInitialState;
   sidebar?: GridSidebarInitialState;
   chartsIntegration?: GridChartsIntegrationInitialState;
+  excelFormula?: GridExcelFormulaInitialState;
 }

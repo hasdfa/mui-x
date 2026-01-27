@@ -28,6 +28,10 @@ export interface GridRootProps extends React.HTMLAttributes<HTMLDivElement> {
    */
   sx?: SxProps<Theme>;
   sidePanel?: React.ReactNode;
+  /**
+   * Content rendered between the header (toolbar) and the grid body.
+   */
+  topContent?: React.ReactNode;
 }
 
 type OwnerState = DataGridProcessedProps;
@@ -51,7 +55,7 @@ const useUtilityClasses = (ownerState: OwnerState, density: GridDensity) => {
 
 const GridRoot = forwardRef<HTMLDivElement, GridRootProps>(function GridRoot(props, ref) {
   const rootProps = useGridRootProps();
-  const { className, children, sidePanel, ...other } = props;
+  const { className, children, sidePanel, topContent, ...other } = props;
   const apiRef = useGridPrivateApiContext();
   const density = useGridSelector(apiRef, gridDensitySelector);
   const rootElementRef = apiRef.current.rootElementRef;
@@ -93,6 +97,7 @@ const GridRoot = forwardRef<HTMLDivElement, GridRootProps>(function GridRoot(pro
     >
       <div className={gridClasses.mainContent} role="presentation">
         <GridHeader />
+        {topContent}
         <GridBody>{children}</GridBody>
         <GridFooterPlaceholder />
       </div>
@@ -108,6 +113,7 @@ GridRoot.propTypes = {
   // | To update them edit the TypeScript types and run "pnpm proptypes"  |
   // ----------------------------------------------------------------------
   sidePanel: PropTypes.node,
+  topContent: PropTypes.node,
   /**
    * The system prop that allows defining system overrides as well as additional CSS styles.
    */

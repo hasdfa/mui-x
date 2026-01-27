@@ -117,6 +117,11 @@ import {
   useGridChartsIntegration,
 } from '../hooks/features/chartsIntegration/useGridChartsIntegration';
 import { historyStateInitializer, useGridHistory } from '../hooks/features/history/useGridHistory';
+import {
+  excelFormulaStateInitializer,
+  useGridExcelFormula,
+} from '../hooks/features/excelFormula/useGridExcelFormula';
+import { useGridExcelFormulaPreProcessors } from '../hooks/features/excelFormula/useGridExcelFormulaPreProcessors';
 
 export const useDataGridPremiumComponent = (
   apiRef: RefObject<GridPrivateApiPremium>,
@@ -161,6 +166,7 @@ export const useDataGridPremiumComponent = (
   useGridLazyLoaderPreProcessors(apiRef, props);
   useGridRowPinningPreProcessors(apiRef);
   useGridAggregationPreProcessors(apiRef, props);
+  useGridExcelFormulaPreProcessors(apiRef, props);
   useGridRowReorderPreProcessors(apiRef, props);
   useGridColumnPinningPreProcessors(apiRef, props);
   useGridRowsPreProcessors(apiRef);
@@ -202,6 +208,7 @@ export const useDataGridPremiumComponent = (
   useGridInitializeState(aiAssistantStateInitializer, apiRef, props);
   useGridInitializeState(chartsIntegrationStateInitializer, apiRef, props);
   useGridInitializeState(historyStateInitializer, apiRef, props);
+  useGridInitializeState(excelFormulaStateInitializer, apiRef, props);
 
   useGridSidebar(apiRef, props);
   useGridPivoting(apiRef, props, inProps.columns, inProps.rows);
@@ -251,6 +258,7 @@ export const useDataGridPremiumComponent = (
   useGridAiAssistant(apiRef, props);
   useGridChartsIntegration(apiRef, props);
   useGridHistory(apiRef, props);
+  useGridExcelFormula(apiRef, props);
   useGridPivotingExportState(apiRef);
 
   // Should be the last thing to run, because all pre-processors should have been registered by now.

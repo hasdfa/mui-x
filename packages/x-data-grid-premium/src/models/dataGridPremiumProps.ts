@@ -48,6 +48,15 @@ import type { GridHistoryEventHandler } from '../hooks/features/history/gridHist
 
 export interface GridExperimentalPremiumFeatures extends GridExperimentalProFeatures {
   charts?: boolean;
+  /**
+   * If `true`, enables Excel-like formula support in cells.
+   * Formulas start with "=" and can reference other columns using `$"columnName"` syntax.
+   * Only references within the same row are supported.
+   * @example
+   * // Cell value: '=$"price" * $"quantity"'
+   * // Displays the computed result of price × quantity
+   */
+  excelFormula?: boolean;
 }
 
 export interface DataGridPremiumPropsWithComplexDefaultValueBeforeProcessing extends Pick<

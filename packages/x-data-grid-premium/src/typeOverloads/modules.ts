@@ -146,6 +146,20 @@ export interface GridColDefPremium<R extends GridValidRowModel = any, V = any, F
    * @default true
    */
   chartable?: boolean;
+  /**
+   * Default formula to compute cell values for all rows in this column.
+   * Can be overridden at runtime via `apiRef.current.setColumnFormula()`.
+   * Takes precedence over row values and row-level formulas.
+   * Uses the same syntax as cell formulas: `=$"price" * $"quantity"`
+   * Requires `experimentalFeatures={{ excelFormula: true }}`.
+   * @default undefined
+   */
+  defaultFormula?: string;
+  /**
+   * Formula to compute cell values for all rows in this column.
+   * @deprecated Use `defaultFormula` instead.
+   */
+  formula?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

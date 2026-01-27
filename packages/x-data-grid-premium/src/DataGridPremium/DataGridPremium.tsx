@@ -29,12 +29,14 @@ import { Sidebar } from '../components/sidebar';
 import { useGridAriaAttributesPremium } from '../hooks/utils/useGridAriaAttributes';
 import { useGridRowAriaAttributesPremium } from '../hooks/features/rows/useGridRowAriaAttributes';
 import { gridCellAggregationResultSelector } from '../hooks/features/aggregation/gridAggregationSelectors';
+import { gridColumnFormulaSelector } from '../hooks/features/excelFormula/gridExcelFormulaSelectors';
 import { useGridApiContext } from '../hooks/utils/useGridApiContext';
 import type { GridApiPremium, GridPrivateApiPremium } from '../models/gridApiPremium';
 import { useGridRowsOverridableMethods } from '../hooks/features/rows/useGridRowsOverridableMethods';
 import { useGridParamsOverridableMethods } from '../hooks/features/rows/useGridParamsOverridableMethods';
 import { gridSidebarOpenSelector } from '../hooks/features/sidebar';
 import { useIsCellEditable } from '../hooks/features/editing/useGridCellEditable';
+import { GridFormulaBar } from '../components/GridFormulaBar';
 
 export type { GridPremiumSlotsComponent as GridSlots } from '../models';
 
@@ -45,6 +47,9 @@ const configuration: GridConfiguration<GridPrivateApiPremium, DataGridPremiumPro
     useGridRowAriaAttributes: useGridRowAriaAttributesPremium,
     useCellAggregationResult: (id, field) => {
       const apiRef = useGridApiContext();
+      // Subscribe to formula state changes - this triggers cell re-renders when formulas change
+      // We don't use the value directly, but the subscription causes re-renders
+      useGridSelector(apiRef, gridColumnFormulaSelector, { field });
       return useGridSelector(apiRef, gridCellAggregationResultSelector, { id, field });
     },
     useFilterValueGetter: (apiRef, props) => (row, column) => {
@@ -91,6 +96,8 @@ const DataGridPremiumRaw = forwardRef(function DataGridPremium<R extends GridVal
 
   const sidebarOpen = useGridSelector(privateApiRef, gridSidebarOpenSelector);
   const sidePanel = sidebarOpen ? <Sidebar /> : null;
+  const isExcelFormulaEnabled = props.experimentalFeatures?.excelFormula === true;
+  const topContent = isExcelFormulaEnabled ? <GridFormulaBar /> : undefined;
 
   return (
     <GridContextProvider
@@ -105,6 +112,7 @@ const DataGridPremiumRaw = forwardRef(function DataGridPremium<R extends GridVal
         {...props.slotProps?.root}
         ref={ref}
         sidePanel={sidePanel}
+        topContent={topContent}
       >
         {watermark}
       </GridRoot>
@@ -460,6 +468,7 @@ DataGridPremiumRaw.propTypes = {
    */
   experimentalFeatures: PropTypes.shape({
     charts: PropTypes.bool,
+    excelFormula: PropTypes.bool,
     warnIfFocusStateIsNotSynced: PropTypes.bool,
   }),
   /**
