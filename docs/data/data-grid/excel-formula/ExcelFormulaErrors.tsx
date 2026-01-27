@@ -49,7 +49,7 @@ const rows = [
   {
     id: 4,
     scenario: 'Division by zero (#VALUE!)',
-    formula: '=$"price" / 0',
+    formula: '=$"price" / $"quantity"',
     price: 200,
     quantity: 0,
     result: '=$"price" / $"quantity"',

@@ -169,11 +169,17 @@ export const useGridExcelFormula = (
         return value;
       }
 
-      // Check column formula as fallback
+      // Check column formula as fallback (state formula, then defaultFormula, then formula)
+      const stateFormula = apiRef.current.state.excelFormula?.columnFormulas[field];
+      if (stateFormula) {
+        return stateFormula;
+      }
+
       const columnLookup = gridColumnLookupSelector(apiRef);
       const column = columnLookup[field];
-      if (column?.formula && isFormulaValue(column.formula)) {
-        return column.formula;
+      const defaultFormula = column?.defaultFormula ?? column?.formula;
+      if (defaultFormula && isFormulaValue(defaultFormula)) {
+        return defaultFormula;
       }
 
       return null;
