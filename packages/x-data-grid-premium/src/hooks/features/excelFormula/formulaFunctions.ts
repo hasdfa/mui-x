@@ -333,7 +333,11 @@ const RIGHT: GridFormulaFunction<string> = {
   evaluate: (args) => {
     const str = String(args[0] ?? '');
     const count = args.length > 1 ? toNumber(args[1]) : 1;
-    return str.slice(-Math.max(1, Math.floor(count)));
+    const n = Math.max(0, Math.floor(count));
+    if (n === 0) {
+      return '';
+    }
+    return str.slice(-n);
   },
 };
 

@@ -87,10 +87,21 @@ export function GridFormulaBar() {
       // Editing a column formula -> update column formula (affects all rows)
       apiRef.current.setColumnFormula(focusedField, inputValue);
     } else {
-      // Editing a row value or row formula -> update row data
+      // Editing a row value or row formula -> route through the edit pipeline
+      // to respect valueParser/valueSetter on the column definition
+      const column = apiRef.current.getColumn(focusedField);
+      let parsedValue: unknown = inputValue;
+      if (column?.valueParser) {
+        parsedValue = column.valueParser(inputValue, apiRef.current.getRow(focusedRowId), column, apiRef);
+      }
       const row = apiRef.current.getRow(focusedRowId);
       if (row) {
-        apiRef.current.updateRows([{ ...row, [focusedField]: inputValue }]);
+        if (column?.valueSetter) {
+          const updatedRow = column.valueSetter(parsedValue as never, row, column, apiRef);
+          apiRef.current.updateRows([updatedRow]);
+        } else {
+          apiRef.current.updateRows([{ ...row, [focusedField]: parsedValue }]);
+        }
       }
     }
   }, [apiRef, focusedRowId, focusedField, inputValue]);
