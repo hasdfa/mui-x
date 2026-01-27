@@ -83,6 +83,10 @@ export interface GridFormulaContext<R extends GridValidRowModel = GridValidRowMo
   field: string;
   columns: Map<string, GridColDef<R>>;
   apiRef: RefObject<GridApiPremium>;
+  /**
+   * Tracks visited fields during evaluation to detect circular references.
+   */
+  visitedFields?: Set<string>;
 }
 
 /**

@@ -248,6 +248,23 @@ describe('<DataGridPremium /> - Excel Formula', () => {
       expect(getCell(0, 4).textContent).to.equal('#CIRC!');
     });
 
+    it('should display #CIRC! for indirect circular reference', () => {
+      render(
+        <div style={{ width: 500, height: 300 }}>
+          <DataGridPremium
+            autoHeight={isJSDOM}
+            disableVirtualization
+            experimentalFeatures={{ excelFormula: true }}
+            rows={[{ id: 1, a: '=$"b" + 1', b: '=$"a" + 1' }]}
+            columns={[{ field: 'id', type: 'number' }, { field: 'a' }, { field: 'b' }]}
+          />
+        </div>,
+      );
+
+      expect(getCell(0, 1).textContent).to.equal('#CIRC!');
+      expect(getCell(0, 2).textContent).to.equal('#CIRC!');
+    });
+
     it('should display #SYNTAX! for invalid formula syntax', () => {
       render(
         <div style={{ width: 500, height: 300 }}>
@@ -385,6 +402,20 @@ describe('<DataGridPremium /> - Excel Formula', () => {
       );
 
       expect(getCell(0, 4).textContent).to.equal('150');
+    });
+
+    it('should treat numeric-like strings as numbers', () => {
+      render(
+        <div style={{ width: 500, height: 300 }}>
+          <DataGridPremium
+            {...baselineProps}
+            experimentalFeatures={{ excelFormula: true }}
+            rows={[{ id: 1, price: '100', quantity: 5, total: '=$"price" + 2' }]}
+          />
+        </div>,
+      );
+
+      expect(getCell(0, 4).textContent).to.equal('102');
     });
 
     it('should handle string literals', () => {

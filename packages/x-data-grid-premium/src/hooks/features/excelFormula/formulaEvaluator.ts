@@ -11,6 +11,7 @@ import type {
   GridFormulaGroupNode,
 } from './gridExcelFormulaInterfaces';
 import { getFormulaFunction } from './formulaFunctions';
+import { parseFormula, isFormulaError } from './formulaParser';
 
 /**
  * Type guard to check if a value is a GridFormulaError.
@@ -24,6 +25,64 @@ function isError(value: unknown): value is GridFormulaError {
     typeof (value as GridFormulaError).type === 'string' &&
     typeof (value as GridFormulaError).message === 'string'
   );
+}
+
+/**
+ * Checks if a value is a formula string (starts with "=").
+ */
+function isFormulaValue(value: unknown): value is string {
+  return typeof value === 'string' && value.startsWith('=');
+}
+
+function createCircularReferenceError(
+  columnName: string,
+  isSelfReference: boolean,
+): GridFormulaError {
+  return {
+    type: 'CIRCULAR_REF',
+    message: isSelfReference
+      ? `Circular reference: column "${columnName}" references itself`
+      : `Circular reference: column "${columnName}" is part of a circular dependency`,
+  };
+}
+
+function getFormulaAst(
+  formulaBody: string,
+  context: GridFormulaContext,
+): GridFormulaNode | GridFormulaError {
+  const cached = context.apiRef.current.state.excelFormula?.formulaCache.get(formulaBody);
+  if (cached) {
+    return cached;
+  }
+  return parseFormula(formulaBody);
+}
+
+function evaluateFormulaString(
+  formulaString: string,
+  field: string,
+  context: GridFormulaContext,
+): unknown | GridFormulaError {
+  const formulaBody = formulaString.slice(1);
+  const ast = getFormulaAst(formulaBody, context);
+
+  if (isFormulaError(ast)) {
+    return ast;
+  }
+
+  const result = evaluateFormula(ast, {
+    row: context.row,
+    rowId: context.rowId,
+    field,
+    columns: context.columns,
+    apiRef: context.apiRef,
+    visitedFields: context.visitedFields,
+  });
+
+  if (result.error) {
+    return result.error;
+  }
+
+  return result.value;
 }
 
 /**
@@ -42,13 +101,18 @@ function evaluateColumnRef(
 ): unknown | GridFormulaError {
   const { columnName } = node;
   const { row, field, columns, apiRef } = context;
+  const visitedFields = context.visitedFields ?? new Set<string>();
+  if (!context.visitedFields) {
+    context.visitedFields = visitedFields;
+  }
 
   // Check for circular reference (self-reference)
   if (columnName === field) {
-    return {
-      type: 'CIRCULAR_REF',
-      message: `Circular reference: column "${columnName}" references itself`,
-    } as GridFormulaError;
+    return createCircularReferenceError(columnName, true);
+  }
+
+  if (visitedFields.has(columnName)) {
+    return createCircularReferenceError(columnName, false);
   }
 
   // Check if column exists
@@ -60,15 +124,28 @@ function evaluateColumnRef(
     } as GridFormulaError;
   }
 
+  const stateFormula = apiRef.current.state.excelFormula?.columnFormulas[columnName];
+  // eslint-disable-next-line no-underscore-dangle
+  const activeFormula = (colDef as { _activeFormula?: string | null })._activeFormula ?? undefined;
+  const columnFormula = stateFormula ?? activeFormula ?? colDef.defaultFormula ?? colDef.formula;
+
+  if (columnFormula && isFormulaValue(columnFormula)) {
+    return evaluateFormulaString(columnFormula, columnName, context);
+  }
+
+  const rowValue = row[columnName];
+  if (isFormulaValue(rowValue)) {
+    return evaluateFormulaString(rowValue, columnName, context);
+  }
+
   // Get the value from the row
   let value: unknown;
 
   // If the column has a valueGetter, use it
   if (colDef.valueGetter) {
-    const rawValue = row[columnName];
-    value = colDef.valueGetter(rawValue as never, row, colDef, apiRef);
+    value = colDef.valueGetter(rowValue as never, row, colDef, apiRef);
   } else {
-    value = row[columnName];
+    value = rowValue;
   }
 
   return value;
@@ -116,13 +193,20 @@ function evaluateBinary(
   if (['+', '-', '*', '/'].includes(operator)) {
     const leftNum = toNumber(left);
     const rightNum = toNumber(right);
+    const leftIsNumeric = !Number.isNaN(leftNum);
+    const rightIsNumeric = !Number.isNaN(rightNum);
 
     // String concatenation with +
-    if (operator === '+' && (typeof left === 'string' || typeof right === 'string')) {
-      return String(left ?? '') + String(right ?? '');
+    if (operator === '+') {
+      if (leftIsNumeric && rightIsNumeric) {
+        return leftNum + rightNum;
+      }
+      if (typeof left === 'string' || typeof right === 'string') {
+        return String(left ?? '') + String(right ?? '');
+      }
     }
 
-    if (Number.isNaN(leftNum) || Number.isNaN(rightNum)) {
+    if (!leftIsNumeric || !rightIsNumeric) {
       return {
         type: 'VALUE_ERROR',
         message: `Cannot perform arithmetic on non-numeric values`,
@@ -130,8 +214,6 @@ function evaluateBinary(
     }
 
     switch (operator) {
-      case '+':
-        return leftNum + rightNum;
       case '-':
         return leftNum - rightNum;
       case '*':
@@ -304,7 +386,32 @@ export function evaluateFormula(
   ast: GridFormulaNode,
   context: GridFormulaContext,
 ): GridFormulaResult {
-  const result = evaluateNode(ast, context);
+  const visitedFields = context.visitedFields ?? new Set<string>();
+  if (!context.visitedFields) {
+    context.visitedFields = visitedFields;
+  }
+
+  let didAddField = false;
+  if (context.field) {
+    if (visitedFields.has(context.field)) {
+      return {
+        value: undefined,
+        error: createCircularReferenceError(context.field, false),
+        isFormula: true,
+      };
+    }
+    visitedFields.add(context.field);
+    didAddField = true;
+  }
+
+  let result: unknown | GridFormulaError;
+  try {
+    result = evaluateNode(ast, context);
+  } finally {
+    if (didAddField) {
+      visitedFields.delete(context.field);
+    }
+  }
 
   if (isError(result)) {
     return {
