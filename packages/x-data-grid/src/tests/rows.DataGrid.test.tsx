@@ -1561,4 +1561,190 @@ describe('<DataGrid /> - Rows', () => {
       expect(getRow(lastRow).getAttribute('aria-rowindex')).to.equal('11'); // 1-based, 1 is the header
     },
   );
+
+  // https://github.com/mui/mui-x/issues/20936
+  describe('performance: updateRows', () => {
+    it('should not re-render cells in rows that were not updated', async () => {
+      // Track which cells render
+      const renderCounts: Record<string, number> = {};
+      function TrackingCell(props: GridRenderCellParams) {
+        const key = `${props.id}-${props.field}`;
+        React.useEffect(() => {
+          renderCounts[key] = (renderCounts[key] || 0) + 1;
+        });
+        return <div data-testid={key}>{props.value}</div>;
+      }
+
+      function TestCase() {
+        apiRef = useGridApiRef();
+        return (
+          <div style={{ width: 300, height: 300 }}>
+            <DataGrid
+              apiRef={apiRef}
+              columns={[
+                { field: 'id' },
+                {
+                  field: 'value',
+                  renderCell: (params) => <TrackingCell {...params} />,
+                },
+              ]}
+              rows={[
+                { id: 0, value: 'A' },
+                { id: 1, value: 'B' },
+                { id: 2, value: 'C' },
+              ]}
+              autoHeight={isJSDOM}
+              disableVirtualization
+            />
+          </div>
+        );
+      }
+
+      render(<TestCase />);
+
+      // Wait for initial render
+      await waitFor(() => {
+        expect(renderCounts['0-value']).to.be.greaterThan(0);
+        expect(renderCounts['1-value']).to.be.greaterThan(0);
+        expect(renderCounts['2-value']).to.be.greaterThan(0);
+      });
+
+      // Record counts after initial render
+      const initialCounts = { ...renderCounts };
+
+      // Update only row 1
+      await act(async () => apiRef.current?.updateRows([{ id: 1, value: 'B-updated' }]));
+
+      // Wait for the update to complete
+      await waitFor(() => {
+        expect(screen.getByTestId('1-value').textContent).to.equal('B-updated');
+      });
+
+      // Row 1 cell should have re-rendered (value changed)
+      expect(renderCounts['1-value']).to.be.greaterThan(initialCounts['1-value']);
+
+      // Rows 0 and 2 cells should NOT have re-rendered (their values didn't change)
+      expect(renderCounts['0-value']).to.equal(initialCounts['0-value']);
+      expect(renderCounts['2-value']).to.equal(initialCounts['2-value']);
+    });
+
+    it('should not re-render unrelated rows when updating a row with same values', async () => {
+      const renderCounts: Record<string, number> = {};
+      function TrackingCell(props: GridRenderCellParams) {
+        const key = `${props.id}-${props.field}`;
+        React.useEffect(() => {
+          renderCounts[key] = (renderCounts[key] || 0) + 1;
+        });
+        return <div data-testid={key}>{props.value}</div>;
+      }
+
+      function TestCase() {
+        apiRef = useGridApiRef();
+        return (
+          <div style={{ width: 300, height: 300 }}>
+            <DataGrid
+              apiRef={apiRef}
+              columns={[
+                { field: 'id' },
+                {
+                  field: 'value',
+                  renderCell: (params) => <TrackingCell {...params} />,
+                },
+              ]}
+              rows={[
+                { id: 0, value: 'A' },
+                { id: 1, value: 'B' },
+              ]}
+              autoHeight={isJSDOM}
+              disableVirtualization
+            />
+          </div>
+        );
+      }
+
+      render(<TestCase />);
+
+      // Wait for initial render
+      await waitFor(() => {
+        expect(renderCounts['0-value']).to.be.greaterThan(0);
+        expect(renderCounts['1-value']).to.be.greaterThan(0);
+      });
+
+      const initialCounts = { ...renderCounts };
+
+      // Update row 1 with the SAME value - this still replaces the row object
+      await act(async () => apiRef.current?.updateRows([{ id: 1, value: 'B' }]));
+
+      // Row 0 should NOT have re-rendered since it was not updated
+      expect(renderCounts['0-value']).to.equal(initialCounts['0-value']);
+      // Row 1 may re-render because the row object is replaced (even with same values)
+      // The key optimization is that other rows don't re-render
+    });
+
+    it('should handle multiple sequential updates efficiently', async () => {
+      const renderCounts: Record<string, number> = {};
+      function TrackingCell(props: GridRenderCellParams) {
+        const key = `${props.id}-${props.field}`;
+        React.useEffect(() => {
+          renderCounts[key] = (renderCounts[key] || 0) + 1;
+        });
+        return <div data-testid={key}>{props.value}</div>;
+      }
+
+      function TestCase() {
+        apiRef = useGridApiRef();
+        return (
+          <div style={{ width: 300, height: 300 }}>
+            <DataGrid
+              apiRef={apiRef}
+              columns={[
+                { field: 'id' },
+                {
+                  field: 'value',
+                  renderCell: (params) => <TrackingCell {...params} />,
+                },
+              ]}
+              rows={[
+                { id: 0, value: 'A' },
+                { id: 1, value: 'B' },
+                { id: 2, value: 'C' },
+                { id: 3, value: 'D' },
+                { id: 4, value: 'E' },
+              ]}
+              autoHeight={isJSDOM}
+              disableVirtualization
+            />
+          </div>
+        );
+      }
+
+      render(<TestCase />);
+
+      // Wait for initial render
+      await waitFor(() => {
+        expect(Object.keys(renderCounts).length).to.be.greaterThan(0);
+      });
+
+      const initialCounts = { ...renderCounts };
+
+      // Perform multiple updates on different rows
+      await act(async () => apiRef.current?.updateRows([{ id: 1, value: 'B1' }]));
+      await act(async () => apiRef.current?.updateRows([{ id: 3, value: 'D1' }]));
+
+      // Wait for updates
+      await waitFor(() => {
+        expect(screen.getByTestId('1-value').textContent).to.equal('B1');
+        expect(screen.getByTestId('3-value').textContent).to.equal('D1');
+      });
+
+      // Only rows 1 and 3 should have additional renders
+      expect(renderCounts['1-value']).to.be.greaterThan(initialCounts['1-value']);
+      expect(renderCounts['3-value']).to.be.greaterThan(initialCounts['3-value']);
+
+      // Rows 0, 2, 4 should NOT have re-rendered
+      expect(renderCounts['0-value']).to.equal(initialCounts['0-value']);
+      expect(renderCounts['2-value']).to.equal(initialCounts['2-value']);
+      expect(renderCounts['4-value']).to.equal(initialCounts['4-value']);
+    });
+  });
 });

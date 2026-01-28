@@ -45,6 +45,43 @@ import { useGridRootProps } from '../utils/useGridRootProps';
 import { useGridPrivateApiContext } from '../utils/useGridPrivateApiContext';
 import { useGridRowsMeta } from '../features/rows/useGridRowsMeta';
 import { eslintUseValue } from '../../utils/utils';
+import type { GridPinnedColumns } from '../features/columns';
+
+/**
+ * Stabilizes an array reference by returning the previous array if the content is identical.
+ * This prevents unnecessary re-renders when the array content hasn't changed.
+ */
+function useStableArray<T>(array: T[]): T[] {
+  const ref = React.useRef(array);
+
+  if (ref.current.length !== array.length || !ref.current.every((item, i) => item === array[i])) {
+    ref.current = array;
+  }
+
+  return ref.current;
+}
+
+/**
+ * Stabilizes a pinned columns object reference by returning the previous object
+ * if the left and right arrays have identical content.
+ */
+function useStablePinnedColumns(pinnedColumns: GridPinnedColumns): GridPinnedColumns {
+  const ref = React.useRef(pinnedColumns);
+
+  const leftChanged =
+    ref.current.left.length !== pinnedColumns.left.length ||
+    !ref.current.left.every((item, i) => item === pinnedColumns.left[i]);
+
+  const rightChanged =
+    ref.current.right.length !== pinnedColumns.right.length ||
+    !ref.current.right.every((item, i) => item === pinnedColumns.right[i]);
+
+  if (leftChanged || rightChanged) {
+    ref.current = pinnedColumns;
+  }
+
+  return ref.current;
+}
 
 const columnsTotalWidthSelector = createSelector(
   gridVisibleColumnDefinitionsSelector,
@@ -90,10 +127,12 @@ export function useGridVirtualizer() {
   const rootProps = useGridRootProps();
   const apiRef = useGridPrivateApiContext();
   const { listView } = rootProps;
-  const visibleColumns = useGridSelector(apiRef, gridVisibleColumnDefinitionsSelector);
+  const visibleColumnsRaw = useGridSelector(apiRef, gridVisibleColumnDefinitionsSelector);
+  const visibleColumns = useStableArray(visibleColumnsRaw);
 
   const pinnedRows = useGridSelector(apiRef, gridPinnedRowsSelector);
-  const pinnedColumns = gridVisiblePinnedColumnDefinitionsSelector(apiRef);
+  const pinnedColumnsRaw = gridVisiblePinnedColumnDefinitionsSelector(apiRef);
+  const pinnedColumns = useStablePinnedColumns(pinnedColumnsRaw);
 
   const rowSelectionManager = useGridSelector(apiRef, gridRowSelectionManagerSelector);
   const isRowSelected = React.useCallback(
