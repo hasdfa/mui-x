@@ -51,7 +51,7 @@ import type { GridPinnedColumns } from '../features/columns';
  * Stabilizes an array reference by returning the previous array if the content is identical.
  * This prevents unnecessary re-renders when the array content hasn't changed.
  */
-function useStableArray<T>(array: T[]): T[] {
+export function useStableArray<T>(array: T[]): T[] {
   const ref = React.useRef(array);
 
   if (ref.current.length !== array.length || !ref.current.every((item, i) => item === array[i])) {
@@ -65,7 +65,7 @@ function useStableArray<T>(array: T[]): T[] {
  * Stabilizes a pinned columns object reference by returning the previous object
  * if the left and right arrays have identical content.
  */
-function useStablePinnedColumns(pinnedColumns: GridPinnedColumns): GridPinnedColumns {
+export function useStablePinnedColumns(pinnedColumns: GridPinnedColumns): GridPinnedColumns {
   const ref = React.useRef(pinnedColumns);
 
   const leftChanged =
