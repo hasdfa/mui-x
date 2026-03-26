@@ -583,7 +583,7 @@
     "onPrompt": {
       "type": { "name": "func" },
       "signature": {
-        "type": "function(prompt: string, promptContext: string, conversationId: string) => Promise<PromptResponse>",
+        "type": "function(prompt: string, promptContext: PromptContext, conversationId: string) => Promise<PromptResponse>",
         "describedArgs": ["prompt", "promptContext", "conversationId"],
         "returned": "Promise<PromptResponse>"
       }

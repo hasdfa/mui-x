@@ -89,8 +89,10 @@ describe('<DataGridPremium /> - AI Assistant', () => {
       await user.keyboard('{Enter}');
 
       expect(promptSpy.callCount).to.equal(1);
-      expect(promptSpy.firstCall.args[1]).contains('Example1');
-      expect(promptSpy.firstCall.args[1]).not.contains('CatA');
+      const context = promptSpy.firstCall.args[1];
+      const contextStr = JSON.stringify(context);
+      expect(contextStr).contains('Example1');
+      expect(contextStr).not.contains('CatA');
     });
 
     it('should sample rows to generate the prompt context', async () => {
@@ -104,8 +106,32 @@ describe('<DataGridPremium /> - AI Assistant', () => {
       await user.keyboard('{Enter}');
 
       expect(promptSpy.callCount).to.equal(1);
-      expect(promptSpy.firstCall.args[1]).not.contains('Example1');
-      expect(promptSpy.firstCall.args[1]).contains('CatA');
+      const context = promptSpy.firstCall.args[1];
+      const contextStr = JSON.stringify(context);
+      expect(contextStr).not.contains('Example1');
+      expect(contextStr).contains('CatA');
+    });
+
+    it('should collect only unique values when sampling', async () => {
+      const { user } = render(<Test allowAiAssistantDataSampling />);
+
+      const aiAssistantToolbarButton = screen.getByTestId('AssistantIcon');
+      await user.click(aiAssistantToolbarButton);
+
+      const input = screen.queryAllByPlaceholderText('Type or record a prompt…')[0];
+      await user.type(input, 'Do something with the data');
+      await user.keyboard('{Enter}');
+
+      expect(promptSpy.callCount).to.equal(1);
+      const context = promptSpy.firstCall.args[1];
+      for (const col of context.columns) {
+        const unique = new Set(
+          col.examples.map((v: any) =>
+            typeof v === 'object' && v !== null ? JSON.stringify(v) : v,
+          ),
+        );
+        expect(unique.size).to.equal(col.examples.length);
+      }
     });
   });
 

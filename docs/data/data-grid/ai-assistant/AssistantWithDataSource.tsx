@@ -8,6 +8,7 @@ import {
   unstable_gridDefaultPromptResolver as promptResolver,
   GridAiAssistantPanel,
   DataGridPremiumProps,
+  PromptContext,
 } from '@mui/x-data-grid-premium';
 import { useMockServer } from '@mui/x-data-grid-generator';
 
@@ -45,7 +46,11 @@ const pivotingColDef: DataGridPremiumProps['pivotingColDef'] = (
   field: columnGroupPath.concat(originalColumnField).join('>->'),
 });
 
-function processPrompt(prompt: string, context: string, conversationId?: string) {
+function processPrompt(
+  prompt: string,
+  context: PromptContext,
+  conversationId?: string,
+) {
   return promptResolver(
     'https://backend.mui.com/api/datagrid/prompt',
     prompt,

@@ -2,6 +2,7 @@ import {
   DataGridPremium,
   GridAiAssistantPanel,
   unstable_gridDefaultPromptResolver as promptResolver,
+  PromptContext,
 } from '@mui/x-data-grid-premium';
 import { useDemoData } from '@mui/x-data-grid-generator';
 
@@ -24,7 +25,11 @@ const VISIBLE_FIELDS = [
   'isAdmin',
 ];
 
-function processPrompt(prompt: string, context: string, conversationId?: string) {
+function processPrompt(
+  prompt: string,
+  context: PromptContext,
+  conversationId?: string,
+) {
   return promptResolver(
     'https://backend.mui.com/api/datagrid/prompt',
     prompt,

@@ -68,6 +68,27 @@ export type PromptResponse = {
   chart: Chart | null;
 };
 
+export type StructuredPromptContext = {
+  columns: Array<{
+    field: string;
+    type: string;
+    description: string | null;
+    examples: any[];
+    allowedOperators: string[];
+  }>;
+  features: {
+    filtering: boolean;
+    sorting: boolean;
+    aggregation: boolean;
+    grouping: boolean;
+    pivoting: boolean;
+    rowSelection: boolean;
+    charts: boolean;
+  };
+};
+
+export type PromptContext = string | StructuredPromptContext;
+
 export type PromptResolverOptions = {
   /**
    * By default, MUI's prompt resolver service stores the queries made to the service to analyze potential errors and improve the service (data is never stored). Enable private mode to make the service only keep track of the token count, without any query related data.

@@ -767,7 +767,10 @@
       "description": "The function to be used to process the prompt.",
       "typeDescriptions": {
         "prompt": { "name": "prompt", "description": "The prompt to be processed." },
-        "promptContext": { "name": "promptContext", "description": "The prompt context." },
+        "promptContext": {
+          "name": "promptContext",
+          "description": "The prompt context containing column definitions and enabled features."
+        },
         "conversationId": {
           "name": "conversationId",
           "description": "The id of the conversation the prompt is part of. If not passed, prompt response will return a new conversation id that can be used to continue the newly started conversation."

@@ -117,7 +117,11 @@ The Data Grid provides all the necessary elements for integration with MUI's ser
        ? 'http://localhost:3000'
        : 'https://api.my-proxy.com';
 
-   function processPrompt(query: string, context: string, conversationId?: string) {
+   function processPrompt(
+     query: string,
+     context: PromptContext,
+     conversationId?: string,
+   ) {
      const additionalContext = `The rows represent: List of employees with their company, position and start date`;
 
      return unstable_gridDefaultPromptResolver(
@@ -134,7 +138,11 @@ The Data Grid provides all the necessary elements for integration with MUI's ser
    Enable `privateMode` to make the service only keep track of the data needed for billing, without any query related data.
 
    ```ts
-   function processPrompt(query: string, context: string, conversationId?: string) {
+   function processPrompt(
+     query: string,
+     context: PromptContext,
+     conversationId?: string,
+   ) {
      return unstable_gridDefaultPromptResolver(
        `${PROMPT_RESOLVER_PROXY_BASE_URL}/api/my-custom-path`,
        query,
@@ -160,7 +168,11 @@ The Data Grid provides all the necessary elements for integration with MUI's ser
    ::
 
    ```ts
-   function processPrompt(query: string, context: string, conversationId?: string) {
+   function processPrompt(
+     query: string,
+     context: PromptContext,
+     conversationId?: string,
+   ) {
      return unstable_gridDefaultPromptResolver(
        `${PROMPT_RESOLVER_PROXY_BASE_URL}/api/my-custom-path`,
        query,
@@ -191,6 +203,31 @@ To replace `unstable_gridDefaultPromptResolver()` with your own solution, send a
 The body of the request requires `query` and `context` parameters.
 `conversationId` and `options` are optional.
 To keep the previous messages in the context you should pass the `conversationId` from the previous response.
+
+The `context` parameter is either a JSON string (for backward compatibility) or a `StructuredPromptContext` object with the following structure:
+
+```ts
+type StructuredPromptContext = {
+  columns: Array<{
+    field: string;
+    type: string;
+    description: string | null;
+    examples: any[];
+    allowedOperators: string[];
+  }>;
+  features: {
+    filtering: boolean;
+    sorting: boolean;
+    aggregation: boolean;
+    grouping: boolean;
+    pivoting: boolean;
+    rowSelection: boolean;
+    charts: boolean;
+  };
+};
+
+type PromptContext = string | StructuredPromptContext;
+```
 
 The API response type is `Result<PromptResponse>`.
 

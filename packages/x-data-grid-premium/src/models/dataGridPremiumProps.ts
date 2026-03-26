@@ -41,6 +41,7 @@ import {
 } from '../hooks/features/dataSource/models';
 import {
   Conversation,
+  PromptContext,
   PromptResponse,
   PromptSuggestion,
 } from '../hooks/features/aiAssistant/gridAiAssistantInterfaces';
@@ -351,13 +352,13 @@ export interface DataGridPremiumPropsWithoutDefaultValue<
   /**
    * The function to be used to process the prompt.
    * @param {string} prompt The prompt to be processed.
-   * @param {string} promptContext The prompt context.
+   * @param {PromptContext} promptContext The prompt context containing column definitions and enabled features.
    * @param {string} conversationId The id of the conversation the prompt is part of. If not passed, prompt response will return a new conversation id that can be used to continue the newly started conversation.
    * @returns {Promise<PromptResponse>} The prompt response.
    */
   onPrompt?: (
     prompt: string,
-    promptContext: string,
+    promptContext: PromptContext,
     conversationId?: string,
   ) => Promise<PromptResponse>;
   /**

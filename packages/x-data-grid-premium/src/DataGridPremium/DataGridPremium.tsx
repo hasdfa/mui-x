@@ -1141,7 +1141,7 @@ DataGridPremiumRaw.propTypes = {
   /**
    * The function to be used to process the prompt.
    * @param {string} prompt The prompt to be processed.
-   * @param {string} promptContext The prompt context.
+   * @param {PromptContext} promptContext The prompt context containing column definitions and enabled features.
    * @param {string} conversationId The id of the conversation the prompt is part of. If not passed, prompt response will return a new conversation id that can be used to continue the newly started conversation.
    * @returns {Promise<PromptResponse>} The prompt response.
    */

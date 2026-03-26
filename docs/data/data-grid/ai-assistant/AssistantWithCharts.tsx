@@ -7,6 +7,7 @@ import {
   GridChartsIntegrationContextProvider,
   GridChartsRendererProxy,
   useGridApiRef,
+  PromptContext,
 } from '@mui/x-data-grid-premium';
 import {
   ChartsRenderer,
@@ -14,7 +15,11 @@ import {
   ChartsRendererProps,
 } from '@mui/x-charts-premium/ChartsRenderer';
 
-function processPrompt(prompt: string, context: string, conversationId?: string) {
+function processPrompt(
+  prompt: string,
+  context: PromptContext,
+  conversationId?: string,
+) {
   return promptResolver(
     'https://backend.mui.com/api/datagrid/prompt',
     prompt,

@@ -3,6 +3,7 @@ import {
   DataGridPremium,
   GridAiAssistantPanel,
   unstable_gridDefaultPromptResolver as promptResolver,
+  PromptContext,
 } from '@mui/x-data-grid-premium';
 import {
   randomBoolean,
@@ -42,7 +43,11 @@ function createExamples(column: string) {
   }
 }
 
-function processPrompt(prompt: string, context: string, conversationId?: string) {
+function processPrompt(
+  prompt: string,
+  context: PromptContext,
+  conversationId?: string,
+) {
   return promptResolver(
     'https://backend.mui.com/api/datagrid/prompt',
     prompt,

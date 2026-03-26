@@ -26,6 +26,7 @@ import {
   GridAiAssistantApi,
   GridAiAssistantState,
   Prompt,
+  StructuredPromptContext,
   PromptResponse,
 } from './gridAiAssistantInterfaces';
 import { DataGridPremiumProcessedProps } from '../../../models/dataGridPremiumProps';
@@ -37,6 +38,7 @@ import {
 import { gridChartsIntegrationActiveChartIdSelector } from '../chartsIntegration/gridChartsIntegrationSelectors';
 
 const DEFAULT_SAMPLE_COUNT = 5;
+const MAX_SAMPLE_PROBES = 20;
 const MAX_CHART_DATA_POINTS = 1000;
 
 export const aiAssistantStateInitializer: GridStateInitializer<
@@ -140,14 +142,36 @@ export const useGridAiAssistant = (
   const collectSampleData = React.useCallback(() => {
     const columnExamples: Record<string, any[]> = {};
 
-    columns.forEach((column) => {
-      columnExamples[column.field] = Array.from({
-        length: Math.min(DEFAULT_SAMPLE_COUNT, rows.length),
-      }).map(() => {
-        const row = rows[Math.floor(Math.random() * rows.length)];
-        return apiRef.current.getRowValue(row, column);
-      });
-    });
+    // For small datasets use all indices; otherwise randomly pick up to MAX_SAMPLE_PROBES
+    let sampledIndices: number[];
+    if (rows.length <= MAX_SAMPLE_PROBES) {
+      sampledIndices = Array.from({ length: rows.length }, (_, i) => i);
+    } else {
+      const indices = new Set<number>();
+      while (indices.size < MAX_SAMPLE_PROBES) {
+        indices.add(Math.floor(Math.random() * rows.length));
+      }
+      sampledIndices = Array.from(indices);
+    }
+
+    for (const column of columns) {
+      const seen = new Set<unknown>();
+      const values: any[] = [];
+
+      for (const idx of sampledIndices) {
+        if (values.length >= DEFAULT_SAMPLE_COUNT) {
+          break;
+        }
+        const value = apiRef.current.getRowValue(rows[idx], column);
+        const key = typeof value === 'object' && value !== null ? JSON.stringify(value) : value;
+        if (!seen.has(key)) {
+          seen.add(key);
+          values.push(value);
+        }
+      }
+
+      columnExamples[column.field] = values;
+    }
 
     return columnExamples;
   }, [apiRef, columns, rows]);
@@ -192,7 +216,18 @@ export const useGridAiAssistant = (
         [] as Record<string, any>[],
       );
 
-      return JSON.stringify(columnsContext);
+      return {
+        columns: columnsContext,
+        features: {
+          filtering: !disableColumnFilter,
+          sorting: !disableColumnSorting,
+          aggregation: !disableAggregation,
+          grouping: !disableRowGrouping,
+          pivoting: !disablePivoting,
+          rowSelection: !!rowSelection,
+          charts: !!(experimentalFeatures?.charts && chartsIntegration),
+        },
+      } as StructuredPromptContext;
     },
     [
       apiRef,
@@ -201,6 +236,13 @@ export const useGridAiAssistant = (
       getPivotDerivedColumns,
       isAiAssistantAvailable,
       disablePivoting,
+      disableColumnFilter,
+      disableColumnSorting,
+      disableAggregation,
+      disableRowGrouping,
+      rowSelection,
+      experimentalFeatures?.charts,
+      chartsIntegration,
     ],
   );
 
